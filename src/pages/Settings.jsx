@@ -22,10 +22,10 @@ const Settings = () => {
     { id: "notifications", label: "Notifications", icon: BellIcon },
     { id: "security", label: "Security", icon: ShieldCheckIcon },
     { id: "preferences", label: "Preferences", icon: Cog6ToothIcon },
-    { id: "privacy", label: "Privacy", icon: KeyIcon },
-    { id: "appearance", label: "Appearance", icon: PaintBrushIcon },
-    { id: "integrations", label: "Integrations", icon: GlobeAltIcon },
-    { id: "data", label: "Data & Storage", icon: CircleStackIcon },
+    // { id: "privacy", label: "Privacy", icon: KeyIcon },
+    // { id: "appearance", label: "Appearance", icon: PaintBrushIcon },
+    // { id: "integrations", label: "Integrations", icon: GlobeAltIcon },
+    // { id: "data", label: "Data & Storage", icon: CircleStackIcon },
   ];
 
   const ProfileSettings = () => (
