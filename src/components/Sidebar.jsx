@@ -158,7 +158,7 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
           </ul>
         </nav>
 
-        {/* Footer/Profile simplified */}
+        {/* Footer/Profile simplified
         <div className={`border-t border-white/10 ${collapsed && !showExpanded ? "p-3" : "p-4 sm:p-5"}`}>
           {showExpanded ? (
             <button
@@ -178,7 +178,7 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Mobile close */}
         <div className="p-4 lg:hidden border-t border-white/10">
