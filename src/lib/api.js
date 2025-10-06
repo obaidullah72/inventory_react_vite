@@ -28,6 +28,7 @@ export const AuthAPI = {
   login: (email, password) => apiRequest('/auth/login', { method: 'POST', body: { email, password } }),
   register: (name, email, password) => apiRequest('/auth/register', { method: 'POST', body: { name, email, password } }),
   me: () => apiRequest('/auth/me'),
+  changePassword: (oldPassword, newPassword) => apiRequest('/auth/change-password', { method: 'POST', body: { oldPassword, newPassword } }),
 };
 
 export const CategoriesAPI = {

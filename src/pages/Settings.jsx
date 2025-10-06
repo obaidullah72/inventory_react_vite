@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { AuthAPI } from "../lib/api";
 import {
   UserIcon,
   BellIcon,
@@ -15,6 +16,7 @@ const Settings = () => {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", phone: "", bio: "" });
 
   useEffect(() => {
     let mounted = true;
@@ -25,15 +27,25 @@ const Settings = () => {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    AuthAPI.me().then(({ user }) => {
+      if (!mounted || !user) return;
+      const [firstName = "", lastName = ""] = (user.name || "").split(" ");
+      setProfile((p) => ({ ...p, firstName, lastName, email: user.email || "" }));
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
   const handleNavigation = (page) => {
     console.log(`Navigating to: ${page}`);
   };
 
   const settingsTabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
-    { id: "notifications", label: "Notifications", icon: BellIcon },
+    // { id: "notifications", label: "Notifications", icon: BellIcon },
     { id: "security", label: "Security", icon: ShieldCheckIcon },
-    { id: "preferences", label: "Preferences", icon: Cog6ToothIcon },
+    // { id: "preferences", label: "Preferences", icon: Cog6ToothIcon },
     // { id: "privacy", label: "Privacy", icon: KeyIcon },
     // { id: "appearance", label: "Appearance", icon: PaintBrushIcon },
     // { id: "integrations", label: "Integrations", icon: GlobeAltIcon },
@@ -49,7 +61,8 @@ const Settings = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
             <input
               type="text"
-              defaultValue="Obaidullah"
+              value={profile.firstName}
+              onChange={(e)=> setProfile({ ...profile, firstName: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -57,7 +70,8 @@ const Settings = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
             <input
               type="text"
-              defaultValue="Mansoor"
+              value={profile.lastName}
+              onChange={(e)=> setProfile({ ...profile, lastName: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -65,15 +79,18 @@ const Settings = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <input
               type="email"
-              defaultValue="obaidullah@company.com"
+              value={profile.email}
+              onChange={(e)=> setProfile({ ...profile, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              readOnly
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
             <input
               type="tel"
-              defaultValue="+1 (555) 123-4567"
+              value={profile.phone}
+              onChange={(e)=> setProfile({ ...profile, phone: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -81,8 +98,9 @@ const Settings = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
             <textarea
               rows={3}
-              defaultValue="System Administrator with expertise in inventory management and business operations."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={profile.bio}
+              onChange={(e)=> setProfile({ ...profile, bio: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus-border-transparent"
             />
           </div>
         </div>
@@ -131,52 +149,55 @@ const Settings = () => {
     </div>
   );
 
-  const SecuritySettings = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Password & Security</h3>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-            <input
-              type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-            <input
-              type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-            <input
-              type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-            Update Password
-          </button>
-        </div>
-      </div>
+  const SecuritySettings = () => {
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [msg, setMsg] = useState("");
+    const [saving, setSaving] = useState(false);
 
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Two-Factor Authentication</h3>
-        <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-          <div>
-            <h4 className="font-medium text-gray-900">Enable 2FA</h4>
-            <p className="text-sm text-gray-500">Add an extra layer of security to your account</p>
+    const onChangePassword = async () => {
+      setMsg("");
+      if (!oldPassword || !newPassword) { setMsg("Please fill all fields"); return; }
+      if (newPassword !== confirmPassword) { setMsg("Passwords do not match"); return; }
+      setSaving(true);
+      try {
+        await AuthAPI.changePassword(oldPassword, newPassword);
+        setMsg("Password updated successfully");
+        setOldPassword(""); setNewPassword(""); setConfirmPassword("");
+      } catch (e) {
+        setMsg(e.message);
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-6">Password & Security</h3>
+          <div className="space-y-6">
+            {msg && <div className="text-sm {msg.includes('successfully') ? 'text-green-600' : 'text-red-600'}">{msg}</div>}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+              <input type="password" value={oldPassword} onChange={(e)=>setOldPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+              <input type="password" value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            </div>
+            <button onClick={onChangePassword} disabled={saving} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+              {saving ? 'Updating...' : 'Update Password'}
+            </button>
           </div>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-            Enable
-          </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const PreferencesSettings = () => (
     <div className="space-y-6">
