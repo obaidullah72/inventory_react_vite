@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -10,10 +10,12 @@ import {
   AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 
-const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }) => {
+import { VendorsAPI, CustomersAPI, ProductsAPI, TransactionsAPI } from "../lib/api";
+
+const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], customers = [], products = [] }) => {
   const [formData, setFormData] = useState({
     type: transaction?.type || "stock-in",
-    productName: transaction?.productName || "",
+    product: transaction?.product || "",
     quantity: transaction?.quantity ?? "",
     unitPrice: transaction?.unitPrice ?? "",
     vendor: transaction?.vendor || "",
@@ -36,9 +38,14 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }
     e.preventDefault();
 
     const payload = {
-      ...formData,
+      type: formData.type,
+      product: formData.product,
+      vendor: formData.type === 'stock-in' ? formData.vendor : undefined,
+      customer: formData.type === 'stock-out' ? formData.customer : undefined,
       quantity: Number(formData.quantity),
       unitPrice: Number(formData.unitPrice),
+      note: formData.notes,
+      reference: formData.reference,
     };
 
     if (payload.type === "stock-in" && !payload.vendor) {
@@ -77,16 +84,20 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }
                 </select>
               </div>
 
-              {/* Product Name */}
+              {/* Product */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
-                <input
-                  type="text"
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                <select
+                  value={formData.product}
+                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                />
+                >
+                  <option value="" disabled>Select a product…</option>
+                  {products.map((p) => (
+                    <option key={p._id} value={p._id}>{p.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Quantity & Unit Price */}
@@ -126,29 +137,32 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }
                   >
                     <option value="" disabled>Select a vendor…</option>
                     {vendors.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
+                      <option key={v._id} value={v._id}>{v.name}</option>
                     ))}
                   </select>
                 </div>
               )}
 
-              {/* Customer input for stock-out (unchanged) */}
+              {/* Customer dropdown for stock-out */}
               {formData.type === "stock-out" && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Customer</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.customer}
                     onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                    required
+                  >
+                    <option value="" disabled>Select a customer…</option>
+                    {customers.map((c) => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
                 </div>
               )}
 
               {/* Reference */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reference</label>
                 <input
                   type="text"
@@ -156,10 +170,10 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }
                   onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-              </div>
+              </div> */}
 
               {/* Notes */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                 <textarea
                   value={formData.notes}
@@ -167,7 +181,7 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [] }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-              </div>
+              </div> */}
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
@@ -197,79 +211,45 @@ const InventoryTransactions = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Vendor list for dropdown (extend or fetch from API later)
-  const [vendors] = useState([
-    "Apple Inc",
-    "Kitchen Pro",
-    "Acme Supplies",
-    "Global Traders",
-  ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [{ vendors }, { customers }, { products }, { transactions }] = await Promise.all([
+        VendorsAPI.list(),
+        CustomersAPI.list(),
+        ProductsAPI.list(),
+        TransactionsAPI.list(),
+      ]);
+      setVendors(vendors);
+      setCustomers(customers);
+      setProducts(products);
+      setTransactions(transactions);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: "stock-in",
-      productName: "MacBook Pro 16-inch",
-      quantity: 10,
-      unitPrice: 2499.99,
-      vendor: "Apple Inc",
-      reference: "PO-001",
-      notes: "Monthly stock replenishment",
-      date: "2024-01-15",
-    },
-    {
-      id: 2,
-      type: "stock-out",
-      productName: "Wireless Headphones",
-      quantity: 5,
-      unitPrice: 199.99,
-      customer: "John Doe",
-      reference: "SO-001",
-      notes: "Customer order fulfillment",
-      date: "2024-01-16",
-    },
-    {
-      id: 3,
-      type: "adjustment",
-      productName: "Running Shoes",
-      quantity: -2,
-      unitPrice: 129.99,
-      reference: "ADJ-001",
-      notes: "Damaged goods adjustment",
-      date: "2024-01-17",
-    },
-    {
-      id: 4,
-      type: "stock-in",
-      productName: "Coffee Maker",
-      quantity: 15,
-      unitPrice: 89.99,
-      vendor: "Kitchen Pro",
-      reference: "PO-002",
-      notes: "New product line addition",
-      date: "2024-01-18",
-    },
-    {
-      id: 5,
-      type: "stock-out",
-      productName: "Programming Book",
-      quantity: 8,
-      unitPrice: 49.99,
-      customer: "Jane Smith",
-      reference: "SO-002",
-      notes: "Bulk order for corporate training",
-      date: "2024-01-19",
-    },
-  ]);
+  useEffect(() => { load(); }, []);
 
-  const filteredTransactions = transactions.filter((transaction) =>
-    transaction.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (transaction.vendor && transaction.vendor.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (transaction.customer && transaction.customer.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    transaction.reference.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTransactions = transactions.filter((t) => {
+    const name = (t.product?.name || t.productName || '').toLowerCase();
+    const type = (t.type || '').toLowerCase();
+    const vendor = (t.vendor?.name || t.vendor || '').toLowerCase();
+    const customer = (t.customer?.name || t.customer || '').toLowerCase();
+    const reference = (t.reference || '').toLowerCase();
+    const q = searchTerm.toLowerCase();
+    return name.includes(q) || type.includes(q) || vendor.includes(q) || customer.includes(q) || reference.includes(q);
+  });
 
   const handleAddTransaction = () => {
     setEditingTransaction(null);
@@ -277,28 +257,48 @@ const InventoryTransactions = () => {
   };
 
   const handleEditTransaction = (transaction) => {
-    setEditingTransaction(transaction);
+    setEditingTransaction({
+      ...transaction,
+      type: transaction.type === 'purchase' ? 'stock-in' : transaction.type === 'sale' ? 'stock-out' : transaction.type,
+      product: transaction.product?._id || transaction.product,
+      vendor: transaction.vendor?._id || transaction.vendor,
+      customer: transaction.customer?._id || transaction.customer,
+    });
     setIsModalOpen(true);
   };
 
-  const handleDeleteTransaction = (id) => {
-    if (window.confirm("Are you sure you want to delete this transaction?")) {
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
-    }
+  const [confirmId, setConfirmId] = useState(null);
+  const handleDeleteTransaction = (id) => setConfirmId(id);
+  const doDelete = async () => {
+    const id = confirmId; setConfirmId(null);
+    try { await TransactionsAPI.remove(id); setTransactions((prev)=> prev.filter((t)=> (t._id||t.id) !== id)); } catch (e) { setError(e.message); }
   };
 
-  const handleSaveTransaction = (formData) => {
-    if (editingTransaction) {
-      setTransactions((prev) =>
-        prev.map((t) => (t.id === editingTransaction.id ? { ...t, ...formData } : t))
-      );
+  const handleSaveTransaction = async (formData) => {
+    try {
+      if (editingTransaction && editingTransaction._id) {
+        const { transaction } = await TransactionsAPI.update(editingTransaction._id, {
+          product: formData.product,
+          vendor: formData.type === 'stock-in' ? formData.vendor : undefined,
+          customer: formData.type === 'stock-out' ? formData.customer : undefined,
+          quantity: formData.quantity,
+          unitPrice: formData.unitPrice,
+          note: formData.notes,
+        });
+        setTransactions((prev)=> prev.map((t)=> (t._id === editingTransaction._id ? transaction : t)));
+      } else {
+        let created;
+        if (formData.type === 'stock-in') {
+          ({ transaction: created } = await TransactionsAPI.purchase({ product: formData.product, vendor: formData.vendor, quantity: formData.quantity, unitPrice: formData.unitPrice, note: formData.notes }));
+        } else if (formData.type === 'stock-out') {
+          ({ transaction: created } = await TransactionsAPI.sale({ product: formData.product, customer: formData.customer, quantity: formData.quantity, unitPrice: formData.unitPrice, note: formData.notes }));
     } else {
-      const newTransaction = {
-        id: Date.now(),
-        date: new Date().toISOString().split("T")[0],
-        ...formData,
-      };
-      setTransactions((prev) => [...prev, newTransaction]);
+          ({ transaction: created } = await TransactionsAPI.adjustment({ product: formData.product, quantity: formData.quantity, note: formData.notes }));
+        }
+        setTransactions((prev) => [created, ...prev]);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -376,27 +376,29 @@ const InventoryTransactions = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th>
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
+              {filteredTransactions.map((transaction) => {
+                const displayType = transaction.type === 'purchase' ? 'stock-in' : transaction.type === 'sale' ? 'stock-out' : transaction.type;
+                return (
+                <tr key={transaction._id || transaction.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full capitalize ${getTypeColor(
-                        transaction.type
+                        displayType
                       )}`}
                     >
-                      {getTypeIcon(transaction.type)}
-                      {transaction.type.replace("-", " ")}
+                      {getTypeIcon(displayType)}
+                      {displayType.replace("-", " ")}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{transaction.productName}</div>
-                      <div className="text-sm text-gray-500">{transaction.date}</div>
+                      <div className="text-sm font-medium text-gray-900">{transaction.product?.name || transaction.productName}</div>
+                      <div className="text-sm text-gray-500">{new Date(transaction.date || transaction.createdAt).toLocaleDateString()}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -414,12 +416,12 @@ const InventoryTransactions = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      ${Number(transaction.quantity * transaction.unitPrice).toFixed(2)}
+                      ${Number((transaction.quantity || 0) * (transaction.unitPrice || 0)).toFixed(2)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{transaction.reference}</div>
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
                       <button
@@ -429,7 +431,7 @@ const InventoryTransactions = () => {
                         <PencilIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        onClick={() => handleDeleteTransaction(transaction._id || transaction.id)}
                         className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                       >
                         <TrashIcon className="w-4 h-4" />
@@ -437,7 +439,7 @@ const InventoryTransactions = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
         </div>
@@ -468,8 +470,28 @@ const InventoryTransactions = () => {
         onClose={() => setIsModalOpen(false)}
         transaction={editingTransaction}
         onSave={handleSaveTransaction}
+        products={products}
         vendors={vendors}
+        customers={customers}
       />
+
+      {confirmId && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={()=>setConfirmId(null)}></div>
+            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl">
+              <div className="p-6 space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">Delete Transaction?</h3>
+                <p className="text-sm text-gray-600">This action cannot be undone.</p>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={doDelete} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">Delete</button>
+                  <button onClick={()=>setConfirmId(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

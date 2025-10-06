@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -9,32 +9,53 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/outline";
 
+import { CustomersAPI, InvoicesAPI } from "../lib/api";
+
 const InvoiceModal = ({ isOpen, onClose, invoice, onSave, customers = [] }) => {
   const [formData, setFormData] = useState({
-    invoiceNumber: invoice?.invoiceNumber || "",
-    customerName: invoice?.customerName || "",
+    number: invoice?.number || "",
+    customer: invoice?.customer || "",
     amount: invoice?.amount ?? "",
-    status: invoice?.status || "pending",
-    dueDate: invoice?.dueDate || "",
+    status: invoice?.status || "issued",
+    dueDate: invoice?.dueDate ? invoice.dueDate.substring(0,10) : "",
     description: invoice?.description || "",
   });
 
+  // Keep form in sync when editing different invoice
+  useEffect(() => {
+    if (invoice) {
+      setFormData({
+        number: invoice.number || "",
+        customer: typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer?._id || ""),
+        amount: invoice.total ?? invoice.amount ?? "",
+        status: invoice.status || "issued",
+        dueDate: invoice.dueDate ? String(invoice.dueDate).substring(0,10) : "",
+        description: invoice.description || "",
+      });
+    }
+  }, [invoice]);
+
   // Ensure the currently selected customer (when editing) is present in options
-  const customerOptions = useMemo(() => {
-    const set = new Set(customers);
-    if (formData.customerName) set.add(formData.customerName);
-    return Array.from(set);
-  }, [customers, formData.customerName]);
+  const customerOptions = useMemo(() => customers, [customers]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     const payload = {
-      ...formData,
-      amount: Number(formData.amount),
+      number: formData.number,
+      type: 'sales',
+      customer: formData.customer,
+      items: [],
+      subTotal: Number(formData.amount),
+      tax: 0,
+      total: Number(formData.amount),
+      balance: Number(formData.amount),
+      dueDate: formData.dueDate,
+      status: formData.status,
+      description: formData.description,
     };
 
-    if (!payload.customerName) {
+    if (!payload.customer) {
       alert("Please select a customer.");
       return;
     }
@@ -59,8 +80,8 @@ const InvoiceModal = ({ isOpen, onClose, invoice, onSave, customers = [] }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Number</label>
                 <input
                   type="text"
-                  value={formData.invoiceNumber}
-                  onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                  value={formData.number}
+                  onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -68,18 +89,16 @@ const InvoiceModal = ({ isOpen, onClose, invoice, onSave, customers = [] }) => {
 
               {/* Customer dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Customer</label>
                 <select
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                  value={formData.customer}
+                  onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
                   <option value="" disabled>Select a customer…</option>
                   {customerOptions.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c._id} value={c._id}>{c.name}</option>
                   ))}
                 </select>
               </div>
@@ -115,10 +134,9 @@ const InvoiceModal = ({ isOpen, onClose, invoice, onSave, customers = [] }) => {
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="pending">Pending</option>
+                  <option value="issued">Issued</option>
                   <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="partial">Partial</option>
                 </select>
               </div>
 
@@ -159,98 +177,147 @@ const InvoicesPayments = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Base customers for the dropdown (extend/fetch as needed)
-  const [customers] = useState([
-    "John Doe",
-    "Jane Smith",
-    "Mike Johnson",
-    "Sarah Wilson",
-    "David Brown",
-  ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [{ customers }, { invoices }] = await Promise.all([
+        CustomersAPI.list(),
+        InvoicesAPI.list(),
+      ]);
+      setCustomers(customers);
+      setInvoices(invoices);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const [invoices, setInvoices] = useState([
-    {
-      id: 1,
-      invoiceNumber: "INV-001",
-      customerName: "John Doe",
-      amount: 1250.0,
-      status: "paid",
-      dueDate: "2024-01-15",
-      description: "Website development services",
-    },
-    {
-      id: 2,
-      invoiceNumber: "INV-002",
-      customerName: "Jane Smith",
-      amount: 850.5,
-      status: "pending",
-      dueDate: "2024-01-20",
-      description: "Consulting services",
-    },
-    {
-      id: 3,
-      invoiceNumber: "INV-003",
-      customerName: "Mike Johnson",
-      amount: 2100.0,
-      status: "overdue",
-      dueDate: "2024-01-10",
-      description: "Product delivery",
-    },
-    {
-      id: 4,
-      invoiceNumber: "INV-004",
-      customerName: "Sarah Wilson",
-      amount: 750.0,
-      status: "paid",
-      dueDate: "2024-01-25",
-      description: "Maintenance services",
-    },
-    {
-      id: 5,
-      invoiceNumber: "INV-005",
-      customerName: "David Brown",
-      amount: 3200.0,
-      status: "pending",
-      dueDate: "2024-01-30",
-      description: "Custom software development",
-    },
-  ]);
+  useEffect(() => { load(); }, []);
 
-  const filteredInvoices = invoices.filter(
-    (invoice) =>
-      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.status.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInvoices = invoices.filter((i) => {
+    const number = (i.number || i.invoiceNumber || '').toLowerCase();
+    const customer = (i.customer?.name || i.customerName || '').toLowerCase();
+    const status = (i.status || '').toLowerCase();
+    const q = searchTerm.toLowerCase();
+    return number.includes(q) || customer.includes(q) || status.includes(q);
+  });
+
+  // Helper: printable PDF-like page with modern blue/white theme
+  const generateInvoicePdf = (inv) => {
+    const number = inv.number || inv.invoiceNumber || '';
+    const customer = inv.customer?.name || inv.customerName || '';
+    const amount = Number(inv.total ?? inv.amount ?? 0).toFixed(2);
+    const due = inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : '';
+    const descr = inv.description || '';
+    const created = new Date(inv.createdAt || Date.now()).toLocaleDateString();
+    const status = (inv.status || 'issued').toUpperCase();
+    const html = `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Invoice ${number}</title>
+      <style>
+        :root{--blue:#1d4ed8;--indigo:#4f46e5;--slate:#0f172a;--muted:#64748b}
+        *{box-sizing:border-box}
+        body{margin:0;background:#f8fafc;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--slate)}
+        .container{max-width:900px;margin:40px auto;padding:0 24px}
+        .card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(2,6,23,.08)}
+        .header{background:linear-gradient(135deg,var(--blue) 0%,var(--indigo) 100%);color:#fff;padding:28px 32px;display:flex;align-items:center;justify-content:space-between}
+        .brand{display:flex;align-items:center;gap:12px}
+        .logo{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-weight:800}
+        .title{margin:0;font-size:22px;letter-spacing:.3px}
+        .meta{margin:4px 0 0;font-size:12px;opacity:.9}
+        .section{padding:24px 32px}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .panel{border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+        .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+        table{width:100%;border-collapse:collapse;margin-top:8px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+        thead th{background:#f1f5f9;color:var(--slate);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+        th,td{padding:12px 14px;border-bottom:1px solid #e5e7eb;text-align:left}
+        tfoot td{border-bottom:none}
+        .right{text-align:right}
+        .badge{display:inline-block;background:#dbeafe;color:#1e40af;font-weight:700;border-radius:999px;padding:6px 12px;font-size:12px}
+        .totalRow td{font-weight:800}
+        .footer{padding:18px 32px;border-top:1px solid #e5e7eb;color:var(--muted);font-size:12px}
+        @media print{body{background:#fff}.container{margin:0;padding:0}.card{box-shadow:none;border:1px solid #e5e7eb}}
+      </style></head>
+      <body><div class="container"><div class="card">
+        <div class="header">
+          <div class="brand">
+            <div class="logo">IP</div>
+            <div>
+              <h1 class="title">Invoice ${number}</h1>
+              <div class="meta">Issued: ${created} • Due: ${due}</div>
+            </div>
+          </div>
+          <div class="badge">${status}</div>
+        </div>
+        <div class="section grid">
+          <div class="panel">
+            <div class="label">Billed To</div>
+            <div>${customer}</div>
+          </div>
+          <div class="panel">
+            <div class="label">Invoice Details</div>
+            <div>Invoice #: <strong>${number}</strong><br/>Due Date: <strong>${due}</strong></div>
+          </div>
+        </div>
+        <div class="section">
+          <table>
+            <thead><tr><th>Description</th><th class="right">Amount</th></tr></thead>
+            <tbody>
+              <tr><td>${descr || 'Invoice amount'}</td><td class="right">$${amount}</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="totalRow"><td>Total</td><td class="right">$${amount}</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="footer">Thank you for your business.</div>
+      </div></div>
+      <script>window.print();</script>
+      </body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+  };
 
   const handleAddInvoice = () => {
     setEditingInvoice(null);
     setIsModalOpen(true);
   };
 
-  const handleEditInvoice = (invoice) => {
+  const handleEditInvoice = async (invoice) => {
+    try {
+      const { invoice: full } = await InvoicesAPI.get(invoice._id || invoice.id);
+      setEditingInvoice(full);
+    } catch {
     setEditingInvoice(invoice);
+    } finally {
     setIsModalOpen(true);
-  };
-
-  const handleDeleteInvoice = (id) => {
-    if (window.confirm("Are you sure you want to delete this invoice?")) {
-      setInvoices((prev) => prev.filter((i) => i.id !== id));
     }
   };
 
-  const handleSaveInvoice = (formData) => {
+  const handleDeleteInvoice = async (id) => {
+    if (!window.confirm("Delete this invoice?")) return;
+    try { await InvoicesAPI.remove(id); setInvoices((prev)=> prev.filter((i)=> (i._id||i.id) !== id)); } catch (e) { setError(e.message); }
+  };
+
+  const handleSaveInvoice = async (formData) => {
+    try {
     if (editingInvoice) {
-      setInvoices((prev) =>
-        prev.map((i) => (i.id === editingInvoice.id ? { ...i, ...formData } : i))
-      );
+        const { invoice } = await InvoicesAPI.update(editingInvoice._id, formData);
+        setInvoices((prev)=> prev.map((i)=> (i._id === editingInvoice._id ? invoice : i)));
     } else {
-      const newInvoice = {
-        id: Date.now(),
-        ...formData,
-      };
-      setInvoices((prev) => [...prev, newInvoice]);
+        const { invoice } = await InvoicesAPI.create(formData);
+        setInvoices((prev)=> [invoice, ...prev]);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -334,20 +401,18 @@ const InvoicesPayments = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={invoice._id || invoice.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</div>
+                      <div className="text-sm font-medium text-gray-900">{invoice.number || invoice.invoiceNumber}</div>
                       <div className="text-sm text-gray-500 truncate max-w-xs">{invoice.description}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{invoice.customerName}</div>
+                    <div className="text-sm text-gray-900">{invoice.customer?.name || invoice.customerName}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      ${Number(invoice.amount).toFixed(2)}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">${Number(invoice.total ?? invoice.amount ?? 0).toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
@@ -365,10 +430,11 @@ const InvoicesPayments = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors">
-                        <EyeIcon className="w-4 h-4" />
-                      </button>
-                      <button className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors">
+                      <button
+                        onClick={() => generateInvoicePdf(invoice)}
+                        className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                        title="Download PDF"
+                      >
                         <DocumentArrowDownIcon className="w-4 h-4" />
                       </button>
                       <button
@@ -378,7 +444,7 @@ const InvoicesPayments = () => {
                         <PencilIcon className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteInvoice(invoice.id)}
+                        onClick={() => handleDeleteInvoice(invoice._id || invoice.id)}
                         className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                       >
                         <TrashIcon className="w-4 h-4" />

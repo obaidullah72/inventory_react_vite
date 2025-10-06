@@ -66,4 +66,27 @@ export const CustomersAPI = {
   get: (id) => apiRequest(`/customers/${id}`),
 };
 
+export const TransactionsAPI = {
+  list: () => apiRequest('/transactions'),
+  purchase: (payload) => apiRequest('/transactions/purchase', { method: 'POST', body: payload }),
+  sale: (payload) => apiRequest('/transactions/sale', { method: 'POST', body: payload }),
+  adjustment: (payload) => apiRequest('/transactions/adjustment', { method: 'POST', body: payload }),
+  update: (id, payload) => apiRequest(`/transactions/${id}`, { method: 'PUT', body: payload }),
+  remove: (id) => apiRequest(`/transactions/${id}`, { method: 'DELETE' }),
+};
+
+export const InvoicesAPI = {
+  list: () => apiRequest('/invoices'),
+  create: (payload) => apiRequest('/invoices', { method: 'POST', body: payload }),
+  update: (id, payload) => apiRequest(`/invoices/${id}`, { method: 'PUT', body: payload }),
+  remove: (id) => apiRequest(`/invoices/${id}`, { method: 'DELETE' }),
+  get: (id) => apiRequest(`/invoices/${id}`),
+};
+
+export const PaymentsAPI = {
+  list: () => apiRequest('/payments'),
+  create: (payload) => apiRequest('/payments', { method: 'POST', body: payload }),
+  remove: (id) => apiRequest(`/payments/${id}`, { method: 'DELETE' }),
+};
+
 

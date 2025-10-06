@@ -23,7 +23,7 @@ const NAV = [
   { label: "Customer", path: "/customers", icon: UsersIcon },
   { label: "Inventory Transactions", path: "/inventory-transactions", icon: ArrowsRightLeftIcon },
   { label: "Invoices & Payments", path: "/invoices-payments", icon: DocumentTextIcon },
-  { label: "Reports", path: "/reports", icon: ChartBarIcon },
+  // { label: "Reports", path: "/reports", icon: ChartBarIcon },
   { label: "Settings", path: "/settings", icon: Cog6ToothIcon },
 ];
 
