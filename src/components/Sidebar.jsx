@@ -18,6 +18,7 @@ import {
 const NAV = [
   { label: "Dashboard", path: "/dashboard", icon: ChartBarIcon },
   { label: "Products", path: "/products", icon: CubeIcon },
+  { label: "Categories", path: "/categories", icon: CubeIcon },
   { label: "Vendor", path: "/vendors", icon: BuildingStorefrontIcon },
   { label: "Customer", path: "/customers", icon: UsersIcon },
   { label: "Inventory Transactions", path: "/inventory-transactions", icon: ArrowsRightLeftIcon },

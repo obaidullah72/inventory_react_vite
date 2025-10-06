@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -13,17 +13,37 @@ import {
 
 const CustomerModal = ({ isOpen, onClose, customer, onSave }) => {
   const [formData, setFormData] = useState({
-    firstName: customer?.firstName || "",
-    lastName: customer?.lastName || "",
-    email: customer?.email || "",
-    phone: customer?.phone || "",
-    address: customer?.address || "",
-    city: customer?.city || "",
-    state: customer?.state || "",
-    zipCode: customer?.zipCode || "",
-    customerType: customer?.customerType || "individual",
-    status: customer?.status || "active",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    customerType: "individual",
+    status: "active",
   });
+
+  useEffect(() => {
+    if (customer) {
+      const [firstName = "", lastName = ""] = (customer.name || "").split(" ");
+      setFormData({
+        firstName,
+        lastName,
+        email: customer.email || "",
+        phone: customer.phone || "",
+        address: customer.address || "",
+        city: customer.city || "",
+        state: customer.state || "",
+        zipCode: customer.zipCode || "",
+        customerType: customer.customerType || "individual",
+        status: customer.isActive === false ? "inactive" : "active",
+      });
+    } else {
+      setFormData({ firstName: "", lastName: "", email: "", phone: "", address: "", city: "", state: "", zipCode: "", customerType: "individual", status: "active" });
+    }
+  }, [customer]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -178,84 +198,36 @@ const CustomerModal = ({ isOpen, onClose, customer, onSave }) => {
   );
 };
 
+import { CustomersAPI } from "../lib/api";
+
 const Customers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [customers, setCustomers] = useState([
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@email.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Main Street",
-      city: "New York",
-      state: "NY",
-      zipCode: "10001",
-      customerType: "individual",
-      status: "active",
-    },
-    {
-      id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane.smith@email.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Oak Avenue",
-      city: "Los Angeles",
-      state: "CA",
-      zipCode: "90210",
-      customerType: "business",
-      status: "active",
-    },
-    {
-      id: 3,
-      firstName: "Mike",
-      lastName: "Johnson",
-      email: "mike.johnson@email.com",
-      phone: "+1 (555) 456-7890",
-      address: "789 Pine Road",
-      city: "Chicago",
-      state: "IL",
-      zipCode: "60601",
-      customerType: "wholesale",
-      status: "inactive",
-    },
-    {
-      id: 4,
-      firstName: "Sarah",
-      lastName: "Wilson",
-      email: "sarah.wilson@email.com",
-      phone: "+1 (555) 321-0987",
-      address: "321 Elm Street",
-      city: "Houston",
-      state: "TX",
-      zipCode: "77001",
-      customerType: "individual",
-      status: "active",
-    },
-    {
-      id: 5,
-      firstName: "David",
-      lastName: "Brown",
-      email: "david.brown@email.com",
-      phone: "+1 (555) 654-3210",
-      address: "654 Maple Lane",
-      city: "Phoenix",
-      state: "AZ",
-      zipCode: "85001",
-      customerType: "business",
-      status: "blocked",
-    },
-  ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { customers } = await CustomersAPI.list();
+      setCustomers(customers);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const filteredCustomers = customers.filter(customer =>
-    `${customer.firstName} ${customer.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.phone.includes(searchTerm) ||
-    customer.city.toLowerCase().includes(searchTerm.toLowerCase())
+    (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddCustomer = () => {
@@ -263,28 +235,44 @@ const Customers = () => {
     setIsModalOpen(true);
   };
 
-  const handleEditCustomer = (customer) => {
-    setEditingCustomer(customer);
-    setIsModalOpen(true);
-  };
-
-  const handleDeleteCustomer = (id) => {
-    if (window.confirm("Are you sure you want to delete this customer?")) {
-      setCustomers(customers.filter(customer => customer.id !== id));
+  const handleEditCustomer = async (customer) => {
+    try {
+      const { customer: full } = await CustomersAPI.get(customer._id);
+      setEditingCustomer(full);
+    } catch {
+      setEditingCustomer(customer);
+    } finally {
+      setIsModalOpen(true);
     }
   };
 
-  const handleSaveCustomer = (formData) => {
-    if (editingCustomer) {
-      setCustomers(customers.map(customer =>
-        customer.id === editingCustomer.id ? { ...customer, ...formData } : customer
-      ));
-    } else {
-      const newCustomer = {
-        id: Date.now(),
-        ...formData,
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    try { await CustomersAPI.remove(id); setCustomers((prev)=> prev.filter((c)=> c._id !== id)); } catch (e) { setError(e.message); }
+  };
+
+  const handleSaveCustomer = async (formData) => {
+    try {
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        customerType: formData.customerType,
+        isActive: formData.status !== 'inactive' && formData.status !== 'blocked',
       };
-      setCustomers([...customers, newCustomer]);
+      if (editingCustomer) {
+        const { customer } = await CustomersAPI.update(editingCustomer._id, payload);
+        setCustomers((prev)=> prev.map((c)=> c._id === editingCustomer._id ? customer : c));
+      } else {
+        const { customer } = await CustomersAPI.create(payload);
+        setCustomers((prev)=> [customer, ...prev]);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -343,6 +331,8 @@ const Customers = () => {
             </button>
           </div>
 
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+
           {/* Customers Table */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 overflow-hidden">
             <div className="overflow-x-auto">
@@ -351,7 +341,7 @@ const Customers = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -359,15 +349,15 @@ const Customers = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredCustomers.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={customer._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            {customer.firstName[0]}{customer.lastName[0]}
+                            {(customer.name || '?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {customer.firstName} {customer.lastName}
+                              {customer.name}
                             </div>
                           </div>
                         </div>
@@ -387,17 +377,17 @@ const Customers = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-sm text-gray-900">
                           <MapPinIcon className="w-4 h-4 text-gray-400" />
-                          <span>{customer.city}, {customer.state} {customer.zipCode}</span>
+                          <span className="truncate max-w-xs">{customer.address}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getTypeColor(customer.customerType)}`}>
-                          {customer.customerType}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getTypeColor(customer.customerType || 'individual')}`}>
+                          {customer.customerType || 'individual'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(customer.status)}`}>
-                          {customer.status}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor((customer.isActive !== false) ? 'active' : 'inactive')}`}>
+                          {(customer.isActive !== false) ? 'active' : 'inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -409,7 +399,7 @@ const Customers = () => {
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteCustomer(customer.id)}
+                            onClick={() => handleDeleteCustomer(customer._id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                           >
                             <TrashIcon className="w-4 h-4" />

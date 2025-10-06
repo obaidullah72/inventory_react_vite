@@ -8,15 +8,27 @@ import InventoryTransactions from "./pages/InventoryTransactions";
 import InvoicesPayments from "./pages/InvoicesPayments";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Categories from "./pages/Categories";
+
+function RequireAuth({ children }) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  if (!token) return <Navigate to="/login" replace />;
+  return children;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="products" element={<Products />} />
+          <Route path="categories" element={<Categories />} />
           <Route path="vendors" element={<Vendors />} />
           <Route path="customers" element={<Customers />} />
           <Route path="inventory-transactions" element={<InventoryTransactions />} />

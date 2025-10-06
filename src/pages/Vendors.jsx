@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -12,14 +12,28 @@ import {
 
 const VendorModal = ({ isOpen, onClose, vendor, onSave }) => {
   const [formData, setFormData] = useState({
-    name: vendor?.name || "",
-    company: vendor?.company || "",
-    email: vendor?.email || "",
-    phone: vendor?.phone || "",
-    address: vendor?.address || "",
-    contactPerson: vendor?.contactPerson || "",
-    status: vendor?.status || "active",
+    company: "",
+    email: "",
+    phone: "",
+    address: "",
+    contactPerson: "",
+    status: "active",
   });
+
+  useEffect(() => {
+    if (vendor) {
+      setFormData({
+        company: vendor.name || "",
+        email: vendor.email || "",
+        phone: vendor.phone || "",
+        address: vendor.address || "",
+        contactPerson: vendor.contactPerson || "",
+        status: vendor.isActive === false ? "inactive" : "active",
+      });
+    } else {
+      setFormData({ company: "", email: "", phone: "", address: "", contactPerson: "", status: "active" });
+    }
+  }, [vendor]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -126,69 +140,36 @@ const VendorModal = ({ isOpen, onClose, vendor, onSave }) => {
   );
 };
 
+import { VendorsAPI } from "../lib/api";
+
 const Vendors = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [vendors, setVendors] = useState([
-    {
-      id: 1,
-      name: "Tech Solutions Inc",
-      company: "Tech Solutions Inc",
-      contactPerson: "John Smith",
-      email: "john@techsolutions.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Tech Street, Silicon Valley, CA 94000",
-      status: "active",
-    },
-    {
-      id: 2,
-      name: "Global Electronics",
-      company: "Global Electronics Ltd",
-      contactPerson: "Sarah Johnson",
-      email: "sarah@globalelectronics.com",
-      phone: "+1 (555) 987-6543",
-      address: "456 Electronics Ave, New York, NY 10001",
-      status: "active",
-    },
-    {
-      id: 3,
-      name: "Fashion Forward",
-      company: "Fashion Forward Co",
-      contactPerson: "Mike Chen",
-      email: "mike@fashionforward.com",
-      phone: "+1 (555) 456-7890",
-      address: "789 Fashion Blvd, Los Angeles, CA 90210",
-      status: "inactive",
-    },
-    {
-      id: 4,
-      name: "Home & Garden Pro",
-      company: "Home & Garden Professional",
-      contactPerson: "Emily Davis",
-      email: "emily@homegardenpro.com",
-      phone: "+1 (555) 321-0987",
-      address: "321 Garden Way, Portland, OR 97201",
-      status: "active",
-    },
-    {
-      id: 5,
-      name: "Book World",
-      company: "Book World Publishers",
-      contactPerson: "David Wilson",
-      email: "david@bookworld.com",
-      phone: "+1 (555) 654-3210",
-      address: "654 Library Lane, Boston, MA 02101",
-      status: "suspended",
-    },
-  ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { vendors } = await VendorsAPI.list();
+      setVendors(vendors);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const filteredVendors = vendors.filter(vendor =>
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vendor.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (vendor.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vendor.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vendor.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (vendor.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddVendor = () => {
@@ -196,29 +177,41 @@ const Vendors = () => {
     setIsModalOpen(true);
   };
 
-  const handleEditVendor = (vendor) => {
-    setEditingVendor(vendor);
-    setIsModalOpen(true);
-  };
-
-  const handleDeleteVendor = (id) => {
-    if (window.confirm("Are you sure you want to delete this vendor?")) {
-      setVendors(vendors.filter(vendor => vendor.id !== id));
+  const handleEditVendor = async (vendor) => {
+    try {
+      const { vendor: full } = await VendorsAPI.get(vendor._id);
+      setEditingVendor(full);
+    } catch {
+      setEditingVendor(vendor);
+    } finally {
+      setIsModalOpen(true);
     }
   };
 
-  const handleSaveVendor = (formData) => {
-    if (editingVendor) {
-      setVendors(vendors.map(vendor =>
-        vendor.id === editingVendor.id ? { ...vendor, ...formData } : vendor
-      ));
-    } else {
-      const newVendor = {
-        id: Date.now(),
+  const handleDeleteVendor = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this vendor?")) return;
+    try { await VendorsAPI.remove(id); setVendors((prev)=> prev.filter((v)=> v._id !== id)); } catch (e) { setError(e.message); }
+  };
+
+  const handleSaveVendor = async (formData) => {
+    try {
+      const payload = {
         name: formData.company,
-        ...formData,
+        contactPerson: formData.contactPerson,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        isActive: formData.status !== 'inactive' && formData.status !== 'suspended',
       };
-      setVendors([...vendors, newVendor]);
+      if (editingVendor) {
+        const { vendor } = await VendorsAPI.update(editingVendor._id, payload);
+        setVendors((prev)=> prev.map((v)=> v._id === editingVendor._id ? vendor : v));
+      } else {
+        const { vendor } = await VendorsAPI.create(payload);
+        setVendors((prev)=> [vendor, ...prev]);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -268,13 +261,17 @@ const Vendors = () => {
             </button>
           </div>
 
+          {error && (
+            <div className="text-red-600 text-sm">{error}</div>
+          )}
+
           {/* Vendors Table */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Person</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Info</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
@@ -284,12 +281,12 @@ const Vendors = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredVendors.map((vendor) => (
-                    <tr key={vendor.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={vendor._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{vendor.company}</div>
+                        <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{vendor.contactPerson}</div>
+                        <div className="text-sm font-medium text-gray-900">{vendor.contactPerson}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-1">
@@ -310,8 +307,8 @@ const Vendors = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(vendor.status)}`}>
-                          {vendor.status}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusColor(vendor.isActive ? 'active' : 'inactive')}`}>
+                          {vendor.isActive ? 'active' : 'inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -323,7 +320,7 @@ const Vendors = () => {
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteVendor(vendor.id)}
+                            onClick={() => handleDeleteVendor(vendor._id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                           >
                             <TrashIcon className="w-4 h-4" />

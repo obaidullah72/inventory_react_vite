@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   UserIcon,
   BellIcon,
@@ -12,6 +12,18 @@ import {
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const [settings, setSettings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    import("../lib/api").then(({ SettingsAPI }) => {
+      SettingsAPI.list().then(({ settings }) => { if (mounted) setSettings(settings); }).catch((e)=> setError(e.message)).finally(()=> setLoading(false));
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const handleNavigation = (page) => {
     console.log(`Navigating to: ${page}`);
@@ -171,6 +183,28 @@ const Settings = () => {
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-6">General Preferences</h3>
         <div className="space-y-6">
+          {loading && <div>Loading settings...</div>}
+          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {!loading && settings.length > 0 && (
+            <div className="border rounded-xl">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left p-2 border-b">Key</th>
+                    <th className="text-left p-2 border-b">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {settings.map((s) => (
+                    <tr key={s._id} className="odd:bg-white even:bg-slate-50">
+                      <td className="p-2 border-b">{s.key}</td>
+                      <td className="p-2 border-b">{typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
             <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">

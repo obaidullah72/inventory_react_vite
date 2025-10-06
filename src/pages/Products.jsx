@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -7,14 +7,16 @@ import {
   FunnelIcon,
 } from "@heroicons/react/24/outline";
 
-const ProductModal = ({ isOpen, onClose, product, onSave }) => {
+const ProductModal = ({ isOpen, onClose, product, onSave, categories }) => {
   const [formData, setFormData] = useState({
     name: product?.name || "",
-    category: product?.category || "",
-    price: product?.price || "",
-    stock: product?.stock || "",
+    category: product?.category?._id || product?.category || "",
+    salePrice: product?.salePrice || "",
+    stockOnHand: product?.stockOnHand || "",
     description: product?.description || "",
     sku: product?.sku || "",
+    barcode: product?.barcode || "",
+    unit: product?.unit || "pcs",
   });
 
   const handleSubmit = (e) => {
@@ -54,11 +56,9 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                   required
                 >
                   <option value="">Select Category</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Clothing">Clothing</option>
-                  <option value="Books">Books</option>
-                  <option value="Home & Garden">Home & Garden</option>
-                  <option value="Sports">Sports</option>
+                  {categories?.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -67,8 +67,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    value={formData.salePrice}
+                    onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -77,8 +77,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
                   <input
                     type="number"
-                    value={formData.stock}
-                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    value={formData.stockOnHand}
+                    onChange={(e) => setFormData({ ...formData, stockOnHand: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -126,58 +126,36 @@ const ProductModal = ({ isOpen, onClose, product, onSave }) => {
   );
 };
 
+import { ProductsAPI, CategoriesAPI } from "../lib/api";
+
 const Products = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "MacBook Pro 16-inch",
-      category: "Electronics",
-      price: 2499.99,
-      stock: 15,
-      sku: "MBP16-001",
-      description: "Apple MacBook Pro with M2 Pro chip",
-    },
-    {
-      id: 2,
-      name: "Wireless Headphones",
-      category: "Electronics",
-      price: 199.99,
-      stock: 45,
-      sku: "WH-001",
-      description: "High-quality wireless headphones with noise cancellation",
-    },
-    {
-      id: 3,
-      name: "Running Shoes",
-      category: "Sports",
-      price: 129.99,
-      stock: 32,
-      sku: "RS-001",
-      description: "Comfortable running shoes for all terrains",
-    },
-    {
-      id: 4,
-      name: "Coffee Maker",
-      category: "Home & Garden",
-      price: 89.99,
-      stock: 18,
-      sku: "CM-001",
-      description: "Automatic coffee maker with programmable timer",
-    },
-    {
-      id: 5,
-      name: "Programming Book",
-      category: "Books",
-      price: 49.99,
-      stock: 67,
-      sku: "PB-001",
-      description: "Complete guide to modern programming",
-    },
-  ]);
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [{ products: prods }, { categories: cats }] = await Promise.all([
+        ProductsAPI.list(searchTerm),
+        CategoriesAPI.list(),
+      ]);
+      setProducts(prods);
+      setCategories(cats);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+  useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [searchTerm]);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -195,23 +173,22 @@ const Products = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteProduct = (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(product => product.id !== id));
-    }
+  const handleDeleteProduct = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    try { await ProductsAPI.remove(id); setProducts((prev) => prev.filter((p) => p._id !== id)); } catch (e) { setError(e.message); }
   };
 
-  const handleSaveProduct = (formData) => {
-    if (editingProduct) {
-      setProducts(products.map(product =>
-        product.id === editingProduct.id ? { ...product, ...formData } : product
-      ));
-    } else {
-      const newProduct = {
-        id: Date.now(),
-        ...formData,
-      };
-      setProducts([...products, newProduct]);
+  const handleSaveProduct = async (formData) => {
+    try {
+      if (editingProduct) {
+        const { product } = await ProductsAPI.update(editingProduct._id, formData);
+        setProducts((prev) => prev.map((p) => (p._id === editingProduct._id ? product : p)));
+      } else {
+        const { product } = await ProductsAPI.create(formData);
+        setProducts((prev) => [product, ...prev]);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
@@ -268,7 +245,7 @@ const Products = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{product.name}</div>
@@ -277,17 +254,17 @@ const Products = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {product.category}
+                          {product.category?.name || '—'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.sku}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.price}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.salePrice}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          product.stock > 20 ? 'bg-green-100 text-green-800' : 
-                          product.stock > 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                          product.stockOnHand > 20 ? 'bg-green-100 text-green-800' : 
+                          product.stockOnHand > 10 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
                         }`}>
-                          {product.stock}
+                          {product.stockOnHand}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -299,7 +276,7 @@ const Products = () => {
                             <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteProduct(product.id)}
+                            onClick={() => handleDeleteProduct(product._id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -336,6 +313,7 @@ const Products = () => {
         onClose={() => setIsModalOpen(false)}
         product={editingProduct}
         onSave={handleSaveProduct}
+        categories={categories}
       />
     </div>
   );

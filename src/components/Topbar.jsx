@@ -1,9 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BellIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { AuthAPI } from "../lib/api";
 
 const Topbar = ({ onOpenMobile, onToggleCollapsed, collapsed }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { user } = await AuthAPI.me();
+        if (mounted) setUser(user);
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const notifications = [
     { id: 1, title: "New order received", message: "Order #1234 from John Doe", time: "2 min ago", unread: true },
@@ -90,11 +103,11 @@ const Topbar = ({ onOpenMobile, onToggleCollapsed, collapsed }) => {
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-all duration-200"
             >
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                OM
+                {(user?.name || 'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}
               </div>
               <div className="hidden sm:block text-left">
-                <p className="text-sm font-semibold text-gray-900">Obaidullah Mansoor</p>
-                <p className="text-xs text-gray-500">Administrator</p>
+                <p className="text-sm font-semibold text-gray-900">{user?.name || 'User'}</p>
+                <p className="text-xs text-gray-500">{user?.role || ''}</p>
               </div>
               <ChevronDownIcon className="w-4 h-4 text-gray-500" />
             </button>
