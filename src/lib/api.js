@@ -17,6 +17,14 @@ export async function apiRequest(path, { method = 'GET', body, headers } = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Handle unauthorized access - redirect to login
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      // Only redirect if we're in the browser and not already on login page
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
     const error = new Error(data?.error || 'Request failed');
     error.status = res.status;
     throw error;

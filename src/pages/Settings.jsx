@@ -54,58 +54,58 @@ const Settings = () => {
 
   const ProfileSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-6">Personal Information</h3>
+      <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-6">
+        <h3 className="text-lg font-bold text-blue-900 mb-6">Personal Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+            <label className="block text-sm font-medium text-blue-700 mb-2">First Name</label>
             <input
               type="text"
               value={profile.firstName}
               onChange={(e)=> setProfile({ ...profile, firstName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+            <label className="block text-sm font-medium text-blue-700 mb-2">Last Name</label>
             <input
               type="text"
               value={profile.lastName}
               onChange={(e)=> setProfile({ ...profile, lastName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <label className="block text-sm font-medium text-blue-700 mb-2">Email</label>
             <input
               type="email"
               value={profile.email}
               onChange={(e)=> setProfile({ ...profile, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               readOnly
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+            <label className="block text-sm font-medium text-blue-700 mb-2">Phone</label>
             <input
               type="tel"
               value={profile.phone}
               onChange={(e)=> setProfile({ ...profile, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+            <label className="block text-sm font-medium text-blue-700 mb-2">Bio</label>
             <textarea
               rows={3}
               value={profile.bio}
               onChange={(e)=> setProfile({ ...profile, bio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus-border-transparent"
+              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
           </div>
         </div>
         <div className="mt-6 flex justify-end">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+          <button className="text-white px-6 py-2 rounded-lg font-medium transition-all hover:shadow-lg" style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>
             Save Changes
           </button>
         </div>
@@ -174,23 +174,23 @@ const Settings = () => {
 
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Password & Security</h3>
+        <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-6">
+          <h3 className="text-lg font-bold text-blue-900 mb-6">Password & Security</h3>
           <div className="space-y-6">
-            {msg && <div className="text-sm {msg.includes('successfully') ? 'text-green-600' : 'text-red-600'}">{msg}</div>}
+            {msg && <div className={`text-sm ${msg.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>{msg}</div>}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-              <input type="password" value={oldPassword} onChange={(e)=>setOldPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <label className="block text-sm font-medium text-blue-700 mb-2">Current Password</label>
+              <input type="password" value={oldPassword} onChange={(e)=>setOldPassword(e.target.value)} className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-              <input type="password" value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <label className="block text-sm font-medium text-blue-700 mb-2">New Password</label>
+              <input type="password" value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <label className="block text-sm font-medium text-blue-700 mb-2">Confirm New Password</label>
+              <input type="password" value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
             </div>
-            <button onClick={onChangePassword} disabled={saving} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+            <button onClick={onChangePassword} disabled={saving} className="text-white disabled:opacity-60 px-6 py-2 rounded-lg font-medium transition-all hover:shadow-lg disabled:hover:shadow-none" style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>
               {saving ? 'Updating...' : 'Update Password'}
             </button>
           </div>
@@ -275,15 +275,15 @@ const Settings = () => {
           {/* Header */}
           <div className="mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-              <p className="text-gray-600">Manage your account settings and preferences</p>
+              <h1 className="text-3xl font-bold text-blue-900 mb-2">Settings</h1>
+              <p className="text-blue-700">Manage your account settings and preferences</p>
             </div>
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Settings Navigation */}
             <div className="lg:w-64">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-4">
+              <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-4">
                 <nav className="space-y-2">
                   {settingsTabs.map((tab) => (
                     <button
@@ -291,9 +291,10 @@ const Settings = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                         activeTab === tab.id
-                          ? "bg-blue-100 text-blue-700 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
+                          ? "text-white font-medium"
+                          : "text-blue-600 hover:bg-blue-50"
                       }`}
+                      style={activeTab === tab.id ? { background: 'linear-gradient(to right, #1e3a8a, #1e40af)' } : {}}
                     >
                       <tab.icon className="w-5 h-5" />
                       <span>{tab.label}</span>

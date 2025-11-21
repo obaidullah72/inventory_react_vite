@@ -60,9 +60,10 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
       />
 
       <aside
-        className={`fixed z-50 h-dvh bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white
+        className={`fixed top-0 left-0 z-50 h-screen text-white
                     shadow-2xl border-r border-white/10 transition-all duration-500 ease-out ${sidebarWidth}
                     ${openMobile ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        style={{ background: 'linear-gradient(to bottom right, #1e3a8a, #1e40af, #1e3a8a)' }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         role="navigation"
@@ -73,8 +74,9 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
                         p-4 border-b border-white/10 bg-white/5`}>
           <div className="flex items-center gap-3 min-w-0">
             <div className="grid h-11 w-11 place-items-center rounded-2xl
-                            bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700
-                            font-extrabold shadow-xl ring-2 ring-blue-500/20">IP</div>
+                            bg-gradient-to-br from-white to-blue-50
+                            font-extrabold shadow-xl ring-2 ring-white/20"
+                            style={{ color: '#1e3a8a' }}>IP</div>
             {(showExpanded || openMobile) && (
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg font-bold truncate">Inventory Pro</h1>
@@ -113,13 +115,13 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
                       <button
                         onClick={() => go(path)}
                         className={`grid place-items-center w-14 h-14 rounded-2xl border
-                                    ${isActive ? "border-blue-400/50" : "border-white/10"}
+                                    ${isActive ? "border-white/30" : "border-white/10"}
                                     bg-white/5 hover:bg-white/10 transition-all shadow-xl`}
                         aria-current={isActive ? "page" : undefined}
                       >
                         <div className={`grid place-items-center w-10 h-10 rounded-xl
-                                        ${isActive ? "bg-gradient-to-br from-blue-500 to-indigo-600" : "bg-white/10 group-hover:bg-white/20"}`}>
-                          <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-white/80"}`} />
+                                        ${isActive ? "bg-white" : "bg-white/10 group-hover:bg-white/20"}`}>
+                          <Icon className={`w-5 h-5 ${isActive ? "" : "text-white/80"}`} style={isActive ? { color: '#1e3a8a' } : {}} />
                         </div>
                       </button>
 
@@ -143,13 +145,14 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
                     className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold
                                 transition-all relative overflow-hidden
                                 ${isActive
-                                  ? "bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-600 text-white shadow-xl ring-2 ring-blue-500/20"
+                                  ? "bg-white text-navy-900 shadow-xl ring-2 ring-white/20"
                                   : "text-white/85 hover:bg-white/10"}`}
+                    style={isActive ? { color: '#1e3a8a' } : {}}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    {isActive && <span className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-white/90" />}
-                    <div className={`grid place-items-center w-10 h-10 rounded-xl ${isActive ? "bg-white/20" : "bg-white/10"}`}>
-                      <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-white/80"}`} />
+                    {isActive && <span className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full bg-white" />}
+                    <div className={`grid place-items-center w-10 h-10 rounded-xl ${isActive ? "" : "bg-white/10"}`} style={isActive ? { backgroundColor: '#eff6ff' } : {}}>
+                      <Icon className={`w-5 h-5 ${isActive ? "" : "text-white/80"}`} style={isActive ? { color: '#1e3a8a' } : {}} />
                     </div>
                     <span className="flex-1 text-left truncate">{label}</span>
                   </button>

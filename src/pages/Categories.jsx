@@ -68,41 +68,41 @@ export default function Categories() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Categories</h1>
-            <p className="text-gray-600">Organize your products by category</p>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">Categories</h1>
+            <p className="text-blue-700">Organize your products by category</p>
           </div>
         </div>
       </div>
 
       {/* Add form styled similar to action area */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 p-6">
+      <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-6">
         <form onSubmit={add} className="grid gap-4 sm:grid-cols-3">
-          <input className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">Add Category</button>
+          <input className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <button className="text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg" style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>Add Category</button>
         </form>
         {error && <div className="mt-3 text-red-600 text-sm">{error}</div>}
       </div>
 
       {/* Categories Table - mirror Products table styles */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
         {loading ? (
-          <div className="p-6">Loading...</div>
+          <div className="p-6 text-blue-700">Loading...</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Description</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-blue-100">
                 {items.map((c) => (
-                  <tr key={c._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.description}</td>
+                  <tr key={c._id} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">{c.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700">{c.description}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
                       <div className="flex justify-end gap-2">
                         <button
@@ -132,9 +132,9 @@ export default function Categories() {
       {/* Empty State */}
       {!loading && items.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">🏷️</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No categories yet</h3>
-          <p className="text-gray-500">Add your first category using the form above.</p>
+          <div className="text-6xl mb-4" style={{ color: '#93c5fd' }}>🏷️</div>
+          <h3 className="text-lg font-medium text-blue-900 mb-2">No categories yet</h3>
+          <p className="text-blue-600">Add your first category using the form above.</p>
         </div>
       )}
 
@@ -143,32 +143,32 @@ export default function Categories() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setIsEditOpen(false); setEditing(null); }}></div>
-            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+            <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-blue-100">
               <div className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Edit Category</h2>
+                <h2 className="text-xl font-bold text-blue-900 mb-6">Edit Category</h2>
                 <form onSubmit={saveEdit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Name</label>
                     <input
                       type="text"
                       value={editing.name}
                       onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Description</label>
                     <input
                       type="text"
                       value={editing.description || ""}
                       onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                     />
                   </div>
                   <div className="flex gap-3 pt-4">
-                    <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">Update</button>
-                    <button type="button" onClick={() => { setIsEditOpen(false); setEditing(null); }} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors">Cancel</button>
+                    <button type="submit" className="flex-1 text-white py-2 px-4 rounded-lg font-medium transition-all hover:shadow-lg" style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>Update</button>
+                    <button type="button" onClick={() => { setIsEditOpen(false); setEditing(null); }} className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-4 rounded-lg font-medium transition-colors">Cancel</button>
                   </div>
                 </form>
               </div>
