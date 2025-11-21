@@ -188,67 +188,77 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
 
               {/* Quantity & Unit Price */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-blue-700 mb-2">Quantity</label>
-                  <input
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${
-                      (() => {
-                        if (formData.type === 'stock-out' && formData.product && formData.quantity) {
-                          const selectedProduct = products.find(p => p._id === formData.product);
-                          if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
-                            const qty = Number(formData.quantity);
-                            if (qty > selectedProduct.stockOnHand) {
-                              return 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500';
+                  <div className="relative group">
+                    <input
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${
+                        (() => {
+                          if (formData.type === 'stock-out' && formData.product && formData.quantity) {
+                            const selectedProduct = products.find(p => p._id === formData.product);
+                            if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
+                              const qty = Number(formData.quantity);
+                              if (qty > selectedProduct.stockOnHand) {
+                                return 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500';
+                              }
                             }
                           }
-                        }
-                        return 'border-blue-200';
-                      })()
-                    }`}
-                    required
-                    min="0"
-                  />
-                  {/* Stock Warning/Info Message */}
-                  {formData.type === 'stock-out' && formData.product && formData.quantity && (() => {
-                    const selectedProduct = products.find(p => p._id === formData.product);
-                    if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
-                      const qty = Number(formData.quantity);
-                      const stockOnHand = selectedProduct.stockOnHand;
-                      if (qty > stockOnHand) {
-                        return (
-                          <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-sm">
-                            <div className="flex items-start gap-2">
-                              <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                              <div className="flex-1">
-                                <p className="text-sm font-semibold text-amber-800 mb-1">⚠️ Insufficient Stock Warning</p>
-                                <p className="text-xs text-amber-700 mb-1">
-                                  You're trying to sell <span className="font-bold text-amber-900">{qty}</span> units, but only <span className="font-bold text-amber-900">{stockOnHand}</span> units are available in stock.
-                                </p>
-                                <p className="text-xs text-red-600 font-semibold">
-                                  Shortage: {qty - stockOnHand} units
-                                </p>
+                          return 'border-blue-200';
+                        })()
+                      }`}
+                      required
+                      min="0"
+                    />
+                    {/* Stock Warning/Info Tooltip */}
+                    {formData.type === 'stock-out' && formData.product && formData.quantity && (() => {
+                      const selectedProduct = products.find(p => p._id === formData.product);
+                      if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
+                        const qty = Number(formData.quantity);
+                        const stockOnHand = selectedProduct.stockOnHand;
+                        if (qty > stockOnHand) {
+                          return (
+                            <div className="absolute left-0 bottom-full mb-2 w-72 bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 pointer-events-none">
+                              {/* Arrow pointing down */}
+                              <div className="absolute top-full left-4 -mt-1">
+                                <div className="w-3 h-3 bg-amber-50 border-r border-b border-amber-200 transform rotate-45"></div>
+                              </div>
+                              <div className="flex items-start gap-2 relative z-10">
+                                <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-amber-800 mb-1">⚠️ Insufficient Stock Warning</p>
+                                  <p className="text-xs text-amber-700 mb-1">
+                                    You're trying to sell <span className="font-bold text-amber-900">{qty}</span> units, but only <span className="font-bold text-amber-900">{stockOnHand}</span> units are available in stock.
+                                  </p>
+                                  <p className="text-xs text-red-600 font-semibold">
+                                    Shortage: {qty - stockOnHand} units
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      } else if (qty > 0 && qty <= stockOnHand) {
-                        const remaining = stockOnHand - qty;
-                        return (
-                          <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
-                            <p className="text-xs text-blue-700">
-                              <span className="font-semibold">✓ Available:</span> {stockOnHand} units | <span className="font-semibold">Remaining after sale:</span> <span className="text-blue-900 font-bold">{remaining}</span> units
-                            </p>
-                          </div>
-                        );
+                          );
+                        } else if (qty > 0 && qty <= stockOnHand) {
+                          const remaining = stockOnHand - qty;
+                          return (
+                            <div className="absolute left-0 bottom-full mb-2 w-64 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-xl z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 pointer-events-none">
+                              {/* Arrow pointing down */}
+                              <div className="absolute top-full left-4 -mt-1">
+                                <div className="w-3 h-3 bg-blue-50 border-r border-b border-blue-200 transform rotate-45"></div>
+                              </div>
+                              <p className="text-xs text-blue-700 relative z-10">
+                                <span className="font-semibold">✓ Available:</span> {stockOnHand} units | <span className="font-semibold">Remaining after sale:</span> <span className="text-blue-900 font-bold">{remaining}</span> units
+                              </p>
+                            </div>
+                          );
+                        }
                       }
-                    }
-                    return null;
-                  })()}
+                      return null;
+                    })()}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-blue-700 mb-2">Unit Price</label>
