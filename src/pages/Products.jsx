@@ -5,6 +5,7 @@ import {
   TrashIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 const ProductModal = ({ isOpen, onClose, product, onSave, categories }) => {
@@ -137,6 +138,9 @@ const Products = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [priceSort, setPriceSort] = useState(""); // "high-to-low", "low-to-high", ""
 
   const load = async () => {
     setLoading(true);
@@ -158,11 +162,51 @@ const Products = () => {
   useEffect(() => { load(); }, []);
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [searchTerm]);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and sort products
+  const filteredProducts = React.useMemo(() => {
+    let filtered = products.filter(product => {
+      // Search filter
+      const matchesSearch = 
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Category filter
+      const matchesCategory = !selectedCategory || 
+        product.category?._id === selectedCategory ||
+        product.category === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    });
+
+    // Price sorting
+    if (priceSort === "high-to-low") {
+      filtered = [...filtered].sort((a, b) => (b.salePrice || 0) - (a.salePrice || 0));
+    } else if (priceSort === "low-to-high") {
+      filtered = [...filtered].sort((a, b) => (a.salePrice || 0) - (b.salePrice || 0));
+    }
+
+    return filtered;
+  }, [products, searchTerm, selectedCategory, priceSort]);
+
+  const clearFilters = () => {
+    setSelectedCategory("");
+    setPriceSort("");
+    setShowFilter(false);
+  };
+
+  const hasActiveFilters = selectedCategory || priceSort;
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilter && !event.target.closest('.filter-dropdown-container')) {
+        setShowFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFilter]);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -225,11 +269,125 @@ const Products = () => {
                 className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors text-blue-700">
-              <FunnelIcon className="w-5 h-5 text-blue-600" />
-              Filter
-            </button>
+            <div className="relative filter-dropdown-container">
+              <button 
+                onClick={() => setShowFilter(!showFilter)}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
+                  hasActiveFilters 
+                    ? "border-blue-600 bg-blue-50 text-blue-700 font-semibold" 
+                    : "border-blue-200 hover:bg-blue-50 text-blue-700"
+                }`}
+              >
+                <FunnelIcon className="w-5 h-5 text-blue-600" />
+                Filter
+                {hasActiveFilters && (
+                  <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                    {[selectedCategory && "1", priceSort && "1"].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Filter Dropdown */}
+              {showFilter && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-blue-200 z-50">
+                  <div className="p-4 border-b border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-blue-900 text-lg">Filters</h3>
+                      <button
+                        onClick={() => setShowFilter(false)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 space-y-4">
+                    {/* Category Filter */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Category
+                      </label>
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">All Categories</option>
+                        {categories.map((category) => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Price Sort */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Sort by Price
+                      </label>
+                      <select
+                        value={priceSort}
+                        onChange={(e) => setPriceSort(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">Default</option>
+                        <option value="high-to-low">High to Low</option>
+                        <option value="low-to-high">Low to High</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Filter Actions */}
+                  <div className="p-4 border-t border-blue-100 flex gap-2">
+                    <button
+                      onClick={clearFilters}
+                      className="flex-1 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setShowFilter(false)}
+                      className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                      style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-blue-600 font-medium">Active filters:</span>
+              {selectedCategory && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  Category: {categories.find(c => c._id === selectedCategory)?.name || 'Selected'}
+                  <button
+                    onClick={() => setSelectedCategory("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+              {priceSort && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  Price: {priceSort === "high-to-low" ? "High to Low" : "Low to High"}
+                  <button
+                    onClick={() => setPriceSort("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Products Table */}
           <div className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
