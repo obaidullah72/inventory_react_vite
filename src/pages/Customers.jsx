@@ -9,6 +9,7 @@ import {
   EnvelopeIcon,
   MapPinIcon,
   UserIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 const CustomerModal = ({ isOpen, onClose, customer, onSave }) => {
@@ -208,6 +209,11 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(""); // "active", "inactive", "blocked", ""
+  const [customerTypeFilter, setCustomerTypeFilter] = useState(""); // "individual", "business", "wholesale", ""
+  const [nameSort, setNameSort] = useState(""); // "a-z", "z-a", ""
+  const [balanceSort, setBalanceSort] = useState(""); // "high-to-low", "low-to-high", ""
 
   const load = async () => {
     setLoading(true);
@@ -224,12 +230,72 @@ const Customers = () => {
 
   useEffect(() => { load(); }, []);
 
-  const filteredCustomers = customers.filter(customer =>
-    (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.address || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and sort customers
+  const filteredCustomers = React.useMemo(() => {
+    let filtered = customers.filter(customer => {
+      // Search filter
+      const matchesSearch = 
+        (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (customer.phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (customer.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (customer.city || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Status filter
+      let matchesStatus = true;
+      if (statusFilter === "active") {
+        matchesStatus = customer.isActive === true;
+      } else if (statusFilter === "inactive") {
+        matchesStatus = customer.isActive === false;
+      } else if (statusFilter === "blocked") {
+        // Assuming blocked customers have isActive === false, you can adjust this logic
+        matchesStatus = customer.isActive === false;
+      }
+      
+      // Customer Type filter
+      const matchesType = !customerTypeFilter || 
+        (customer.customerType || 'individual') === customerTypeFilter;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+
+    // Name sorting
+    if (nameSort === "a-z") {
+      filtered = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else if (nameSort === "z-a") {
+      filtered = [...filtered].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+    }
+
+    // Balance sorting
+    if (balanceSort === "high-to-low") {
+      filtered = [...filtered].sort((a, b) => (b.balance || 0) - (a.balance || 0));
+    } else if (balanceSort === "low-to-high") {
+      filtered = [...filtered].sort((a, b) => (a.balance || 0) - (b.balance || 0));
+    }
+
+    return filtered;
+  }, [customers, searchTerm, statusFilter, customerTypeFilter, nameSort, balanceSort]);
+
+  const clearFilters = () => {
+    setStatusFilter("");
+    setCustomerTypeFilter("");
+    setNameSort("");
+    setBalanceSort("");
+    setShowFilter(false);
+  };
+
+  const hasActiveFilters = statusFilter || customerTypeFilter || nameSort || balanceSort;
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilter && !event.target.closest('.filter-dropdown-container')) {
+        setShowFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFilter]);
 
   const handleAddCustomer = () => {
     setEditingCustomer(null);
@@ -327,11 +393,178 @@ const Customers = () => {
                 className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors text-blue-700">
-              <FunnelIcon className="w-5 h-5 text-blue-600" />
-              Filter
-            </button>
+            <div className="relative filter-dropdown-container">
+              <button 
+                onClick={() => setShowFilter(!showFilter)}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
+                  hasActiveFilters 
+                    ? "border-blue-600 bg-blue-50 text-blue-700 font-semibold" 
+                    : "border-blue-200 hover:bg-blue-50 text-blue-700"
+                }`}
+              >
+                <FunnelIcon className="w-5 h-5 text-blue-600" />
+                Filter
+                {hasActiveFilters && (
+                  <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                    {[statusFilter && "1", customerTypeFilter && "1", nameSort && "1", balanceSort && "1"].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+
+              {/* Filter Dropdown */}
+              {showFilter && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-blue-200 z-50">
+                  <div className="p-4 border-b border-blue-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-blue-900 text-lg">Filters</h3>
+                      <button
+                        onClick={() => setShowFilter(false)}
+                        className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <XMarkIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 space-y-4">
+                    {/* Status Filter */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="blocked">Blocked</option>
+                      </select>
+                    </div>
+
+                    {/* Customer Type Filter */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Customer Type
+                      </label>
+                      <select
+                        value={customerTypeFilter}
+                        onChange={(e) => setCustomerTypeFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">All Types</option>
+                        <option value="individual">Individual</option>
+                        <option value="business">Business</option>
+                        <option value="wholesale">Wholesale</option>
+                      </select>
+                    </div>
+
+                    {/* Name Sort */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Sort by Name
+                      </label>
+                      <select
+                        value={nameSort}
+                        onChange={(e) => setNameSort(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">Default</option>
+                        <option value="a-z">A to Z</option>
+                        <option value="z-a">Z to A</option>
+                      </select>
+                    </div>
+
+                    {/* Balance Sort */}
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-900 mb-2">
+                        Sort by Balance
+                      </label>
+                      <select
+                        value={balanceSort}
+                        onChange={(e) => setBalanceSort(e.target.value)}
+                        className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                      >
+                        <option value="">Default</option>
+                        <option value="high-to-low">High to Low</option>
+                        <option value="low-to-high">Low to High</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Filter Actions */}
+                  <div className="p-4 border-t border-blue-100 flex gap-2">
+                    <button
+                      onClick={clearFilters}
+                      className="flex-1 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setShowFilter(false)}
+                      className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                      style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-blue-600 font-medium">Active filters:</span>
+              {statusFilter && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium capitalize">
+                  Status: {statusFilter}
+                  <button
+                    onClick={() => setStatusFilter("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+              {customerTypeFilter && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium capitalize">
+                  Type: {customerTypeFilter}
+                  <button
+                    onClick={() => setCustomerTypeFilter("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+              {nameSort && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  Name: {nameSort === "a-z" ? "A to Z" : "Z to A"}
+                  <button
+                    onClick={() => setNameSort("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+              {balanceSort && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  Balance: {balanceSort === "high-to-low" ? "High to Low" : "Low to High"}
+                  <button
+                    onClick={() => setBalanceSort("")}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
 
           {error && <div className="text-red-600 text-sm">{error}</div>}
 
@@ -345,6 +578,7 @@ const Customers = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Contact Info</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Address</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Balance</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
                   </tr>
@@ -385,6 +619,15 @@ const Customers = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getTypeColor(customer.customerType || 'individual')}`}>
                           {customer.customerType || 'individual'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-sm font-semibold ${
+                          (customer.balance || 0) > 0 ? 'text-red-600' : 
+                          (customer.balance || 0) < 0 ? 'text-green-600' : 
+                          'text-blue-900'
+                        }`}>
+                          ${(customer.balance || 0).toFixed(2)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
