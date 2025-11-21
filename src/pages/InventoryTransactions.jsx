@@ -13,7 +13,7 @@ import {
 
 import { VendorsAPI, CustomersAPI, ProductsAPI, TransactionsAPI } from "../lib/api";
 
-const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], customers = [], products = [] }) => {
+const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], customers = [], products = [], error: externalError, onClearError }) => {
   const [formData, setFormData] = useState({
     type: transaction?.type || "stock-in",
     product: transaction?.product || "",
@@ -25,6 +25,46 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
     notes: transaction?.notes || "",
   });
 
+  // Reset form when transaction changes
+  useEffect(() => {
+    if (transaction) {
+      setFormData({
+        type: transaction.type === 'purchase' ? 'stock-in' : transaction.type === 'sale' ? 'stock-out' : transaction.type || "stock-in",
+        product: transaction.product?._id || transaction.product || "",
+        quantity: transaction.quantity ?? "",
+        unitPrice: transaction.unitPrice ?? "",
+        vendor: transaction.vendor?._id || transaction.vendor || "",
+        customer: transaction.customer?._id || transaction.customer || "",
+        reference: transaction.reference || "",
+        notes: transaction.notes || transaction.note || "",
+      });
+    } else {
+      setFormData({
+        type: "stock-in",
+        product: "",
+        quantity: "",
+        unitPrice: "",
+        vendor: "",
+        customer: "",
+        reference: "",
+        notes: "",
+      });
+    }
+  }, [transaction]);
+
+  // Auto-populate unit price when product is selected
+  useEffect(() => {
+    if (formData.product && !transaction) {
+      const selectedProduct = products.find(p => p._id === formData.product);
+      if (selectedProduct && selectedProduct.salePrice) {
+        setFormData(prev => ({
+          ...prev,
+          unitPrice: selectedProduct.salePrice
+        }));
+      }
+    }
+  }, [formData.product, products, transaction]);
+
   const handleTypeChange = (e) => {
     const nextType = e.target.value;
     setFormData((prev) => ({
@@ -35,8 +75,13 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Clear any previous errors
+    if (onClearError) {
+      onClearError();
+    }
 
     const payload = {
       type: formData.type,
@@ -54,8 +99,13 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
       return;
     }
 
-    onSave(payload);
-    onClose();
+    if (payload.type === "stock-out" && !payload.customer) {
+      alert("Please select a customer.");
+      return;
+    }
+
+    // Call onSave and don't close modal - let parent handle success/error
+    await onSave(payload);
   };
 
   if (!isOpen) return null;
@@ -70,6 +120,27 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
               {transaction ? "Edit Transaction" : "Add New Transaction"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Error Message */}
+              {externalError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-red-700">{externalError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClearError}
+                    className="flex-shrink-0 text-red-600 hover:text-red-800"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
               {/* Transaction Type */}
               <div>
                 <label className="block text-sm font-medium text-blue-700 mb-2">Transaction Type</label>
@@ -90,15 +161,29 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
                 <label className="block text-sm font-medium text-blue-700 mb-2">Product</label>
                 <select
                   value={formData.product}
-                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, product: e.target.value });
+                    // Clear error when product changes
+                    if (onClearError) onClearError();
+                  }}
                   className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
                   required
                 >
                   <option value="" disabled>Select a product…</option>
                   {products.map((p) => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
+                    <option key={p._id} value={p._id}>
+                      {p.name} {p.stockOnHand !== undefined ? `(Stock: ${p.stockOnHand})` : ''}
+                    </option>
                   ))}
                 </select>
+                {formData.product && (() => {
+                  const selectedProduct = products.find(p => p._id === formData.product);
+                  return selectedProduct && selectedProduct.stockOnHand !== undefined ? (
+                    <p className="mt-1 text-xs text-blue-600">
+                      Available stock: <span className="font-semibold">{selectedProduct.stockOnHand}</span>
+                    </p>
+                  ) : null;
+                })()}
               </div>
 
               {/* Quantity & Unit Price */}
@@ -109,9 +194,61 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${
+                      (() => {
+                        if (formData.type === 'stock-out' && formData.product && formData.quantity) {
+                          const selectedProduct = products.find(p => p._id === formData.product);
+                          if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
+                            const qty = Number(formData.quantity);
+                            if (qty > selectedProduct.stockOnHand) {
+                              return 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500';
+                            }
+                          }
+                        }
+                        return 'border-blue-200';
+                      })()
+                    }`}
                     required
+                    min="0"
                   />
+                  {/* Stock Warning/Info Message */}
+                  {formData.type === 'stock-out' && formData.product && formData.quantity && (() => {
+                    const selectedProduct = products.find(p => p._id === formData.product);
+                    if (selectedProduct && selectedProduct.stockOnHand !== undefined) {
+                      const qty = Number(formData.quantity);
+                      const stockOnHand = selectedProduct.stockOnHand;
+                      if (qty > stockOnHand) {
+                        return (
+                          <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-sm">
+                            <div className="flex items-start gap-2">
+                              <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-amber-800 mb-1">⚠️ Insufficient Stock Warning</p>
+                                <p className="text-xs text-amber-700 mb-1">
+                                  You're trying to sell <span className="font-bold text-amber-900">{qty}</span> units, but only <span className="font-bold text-amber-900">{stockOnHand}</span> units are available in stock.
+                                </p>
+                                <p className="text-xs text-red-600 font-semibold">
+                                  Shortage: {qty - stockOnHand} units
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      } else if (qty > 0 && qty <= stockOnHand) {
+                        const remaining = stockOnHand - qty;
+                        return (
+                          <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2 shadow-sm">
+                            <p className="text-xs text-blue-700">
+                              <span className="font-semibold">✓ Available:</span> {stockOnHand} units | <span className="font-semibold">Remaining after sale:</span> <span className="text-blue-900 font-bold">{remaining}</span> units
+                            </p>
+                          </div>
+                        );
+                      }
+                    }
+                    return null;
+                  })()}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-blue-700 mb-2">Unit Price</label>
@@ -173,7 +310,10 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
                 </button>
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={() => {
+                    if (onClearError) onClearError();
+                    onClose();
+                  }}
                   className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-4 rounded-lg font-medium transition-colors"
                 >
                   Cancel
@@ -197,6 +337,7 @@ const InventoryTransactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [modalError, setModalError] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [typeFilter, setTypeFilter] = useState(""); // "stock-in", "stock-out", "adjustment", ""
   const [productFilter, setProductFilter] = useState(""); // product ID
@@ -230,12 +371,12 @@ const InventoryTransactions = () => {
   const filteredTransactions = React.useMemo(() => {
     let filtered = transactions.filter((t) => {
       // Search filter
-      const name = (t.product?.name || t.productName || '').toLowerCase();
-      const type = (t.type || '').toLowerCase();
-      const vendor = (t.vendor?.name || t.vendor || '').toLowerCase();
-      const customer = (t.customer?.name || t.customer || '').toLowerCase();
-      const reference = (t.reference || '').toLowerCase();
-      const q = searchTerm.toLowerCase();
+    const name = (t.product?.name || t.productName || '').toLowerCase();
+    const type = (t.type || '').toLowerCase();
+    const vendor = (t.vendor?.name || t.vendor || '').toLowerCase();
+    const customer = (t.customer?.name || t.customer || '').toLowerCase();
+    const reference = (t.reference || '').toLowerCase();
+    const q = searchTerm.toLowerCase();
       const matchesSearch = name.includes(q) || type.includes(q) || vendor.includes(q) || customer.includes(q) || reference.includes(q);
       
       // Type filter
@@ -305,6 +446,7 @@ const InventoryTransactions = () => {
 
   const handleAddTransaction = () => {
     setEditingTransaction(null);
+    setModalError("");
     setIsModalOpen(true);
   };
 
@@ -316,6 +458,7 @@ const InventoryTransactions = () => {
       vendor: transaction.vendor?._id || transaction.vendor,
       customer: transaction.customer?._id || transaction.customer,
     });
+    setModalError("");
     setIsModalOpen(true);
   };
 
@@ -327,6 +470,7 @@ const InventoryTransactions = () => {
   };
 
   const handleSaveTransaction = async (formData) => {
+    setModalError("");
     try {
       if (editingTransaction && editingTransaction._id) {
         const { transaction } = await TransactionsAPI.update(editingTransaction._id, {
@@ -338,6 +482,8 @@ const InventoryTransactions = () => {
           note: formData.notes,
         });
         setTransactions((prev)=> prev.map((t)=> (t._id === editingTransaction._id ? transaction : t)));
+        setIsModalOpen(false);
+        setEditingTransaction(null);
       } else {
         let created;
         if (formData.type === 'stock-in') {
@@ -348,9 +494,21 @@ const InventoryTransactions = () => {
           ({ transaction: created } = await TransactionsAPI.adjustment({ product: formData.product, quantity: formData.quantity, note: formData.notes }));
         }
         setTransactions((prev) => [created, ...prev]);
+        setIsModalOpen(false);
+        setEditingTransaction(null);
       }
     } catch (e) {
-      setError(e.message);
+      // Extract error message from various possible formats
+      let errorMessage = 'An error occurred';
+      if (e?.message) {
+        errorMessage = e.message;
+      } else if (typeof e === 'string') {
+        errorMessage = e;
+      } else if (e?.error) {
+        errorMessage = e.error;
+      }
+      setModalError(errorMessage);
+      // Don't close modal on error - keep it open so user can see and fix the issue
     }
   };
 
@@ -422,7 +580,7 @@ const InventoryTransactions = () => {
             }`}
           >
             <FunnelIcon className="w-5 h-5 text-blue-600" />
-            Filter
+          Filter
             {hasActiveFilters && (
               <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
                 {[typeFilter && "1", productFilter && "1", dateSort && "1", totalSort && "1"].filter(Boolean).length}
@@ -529,7 +687,7 @@ const InventoryTransactions = () => {
                   style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
                 >
                   Apply
-                </button>
+        </button>
               </div>
             </div>
           )}
@@ -686,12 +844,18 @@ const InventoryTransactions = () => {
       {/* Modal */}
       <TransactionModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setModalError("");
+          setIsModalOpen(false);
+          setEditingTransaction(null);
+        }}
         transaction={editingTransaction}
         onSave={handleSaveTransaction}
         products={products}
         vendors={vendors}
         customers={customers}
+        error={modalError}
+        onClearError={() => setModalError("")}
       />
 
       {confirmId && (
