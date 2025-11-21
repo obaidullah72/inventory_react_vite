@@ -8,6 +8,7 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   AdjustmentsHorizontalIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 import { VendorsAPI, CustomersAPI, ProductsAPI, TransactionsAPI } from "../lib/api";
@@ -63,19 +64,19 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}></div>
-        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl">
+        <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-blue-100">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <h2 className="text-xl font-bold text-blue-900 mb-6">
               {transaction ? "Edit Transaction" : "Add New Transaction"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Transaction Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
+                <label className="block text-sm font-medium text-blue-700 mb-2">Transaction Type</label>
                 <select
                   value={formData.type}
                   onChange={handleTypeChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
                   required
                 >
                   <option value="stock-in">Stock In (Purchase)</option>
@@ -86,11 +87,11 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
 
               {/* Product */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Product</label>
+                <label className="block text-sm font-medium text-blue-700 mb-2">Product</label>
                 <select
                   value={formData.product}
                   onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
                   required
                 >
                   <option value="" disabled>Select a product…</option>
@@ -103,23 +104,23 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
               {/* Quantity & Unit Price */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-2">Quantity</label>
                   <input
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Unit Price</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-2">Unit Price</label>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.unitPrice}
                     onChange={(e) => setFormData({ ...formData, unitPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                     required
                   />
                 </div>
@@ -128,11 +129,11 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
               {/* Vendor dropdown for stock-in */}
               {formData.type === "stock-in" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-2">Vendor</label>
                   <select
                     value={formData.vendor}
                     onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
                     required
                   >
                     <option value="" disabled>Select a vendor…</option>
@@ -146,11 +147,11 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
               {/* Customer dropdown for stock-out */}
               {formData.type === "stock-out" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+                  <label className="block text-sm font-medium text-blue-700 mb-2">Customer</label>
                   <select
                     value={formData.customer}
                     onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
                     required
                   >
                     <option value="" disabled>Select a customer…</option>
@@ -161,40 +162,19 @@ const TransactionModal = ({ isOpen, onClose, transaction, onSave, vendors = [], 
                 </div>
               )}
 
-              {/* Reference */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reference</label>
-                <input
-                  type="text"
-                  value={formData.reference}
-                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div> */}
-
-              {/* Notes */}
-              {/* <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div> */}
-
               {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  className="flex-1 text-white py-2 px-4 rounded-lg font-medium transition-all hover:shadow-lg"
+                  style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
                 >
                   {transaction ? "Update" : "Add"} Transaction
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-4 rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
@@ -217,6 +197,11 @@ const InventoryTransactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [typeFilter, setTypeFilter] = useState(""); // "stock-in", "stock-out", "adjustment", ""
+  const [productFilter, setProductFilter] = useState(""); // product ID
+  const [dateSort, setDateSort] = useState(""); // "newest", "oldest", ""
+  const [totalSort, setTotalSort] = useState(""); // "high-to-low", "low-to-high", ""
 
   const load = async () => {
     setLoading(true);
@@ -241,15 +226,82 @@ const InventoryTransactions = () => {
 
   useEffect(() => { load(); }, []);
 
-  const filteredTransactions = transactions.filter((t) => {
-    const name = (t.product?.name || t.productName || '').toLowerCase();
-    const type = (t.type || '').toLowerCase();
-    const vendor = (t.vendor?.name || t.vendor || '').toLowerCase();
-    const customer = (t.customer?.name || t.customer || '').toLowerCase();
-    const reference = (t.reference || '').toLowerCase();
-    const q = searchTerm.toLowerCase();
-    return name.includes(q) || type.includes(q) || vendor.includes(q) || customer.includes(q) || reference.includes(q);
-  });
+  // Filter and sort transactions
+  const filteredTransactions = React.useMemo(() => {
+    let filtered = transactions.filter((t) => {
+      // Search filter
+      const name = (t.product?.name || t.productName || '').toLowerCase();
+      const type = (t.type || '').toLowerCase();
+      const vendor = (t.vendor?.name || t.vendor || '').toLowerCase();
+      const customer = (t.customer?.name || t.customer || '').toLowerCase();
+      const reference = (t.reference || '').toLowerCase();
+      const q = searchTerm.toLowerCase();
+      const matchesSearch = name.includes(q) || type.includes(q) || vendor.includes(q) || customer.includes(q) || reference.includes(q);
+      
+      // Type filter
+      const displayType = t.type === 'purchase' ? 'stock-in' : t.type === 'sale' ? 'stock-out' : t.type;
+      const matchesType = !typeFilter || displayType === typeFilter;
+      
+      // Product filter
+      const matchesProduct = !productFilter || 
+        (t.product?._id || t.product) === productFilter;
+      
+      return matchesSearch && matchesType && matchesProduct;
+    });
+
+    // Date sorting
+    if (dateSort === "newest") {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = new Date(a.date || a.createdAt || 0);
+        const dateB = new Date(b.date || b.createdAt || 0);
+        return dateB - dateA;
+      });
+    } else if (dateSort === "oldest") {
+      filtered = [...filtered].sort((a, b) => {
+        const dateA = new Date(a.date || a.createdAt || 0);
+        const dateB = new Date(b.date || b.createdAt || 0);
+        return dateA - dateB;
+      });
+    }
+
+    // Total amount sorting
+    if (totalSort === "high-to-low") {
+      filtered = [...filtered].sort((a, b) => {
+        const totalA = (a.quantity || 0) * (a.unitPrice || 0);
+        const totalB = (b.quantity || 0) * (b.unitPrice || 0);
+        return totalB - totalA;
+      });
+    } else if (totalSort === "low-to-high") {
+      filtered = [...filtered].sort((a, b) => {
+        const totalA = (a.quantity || 0) * (a.unitPrice || 0);
+        const totalB = (b.quantity || 0) * (b.unitPrice || 0);
+        return totalA - totalB;
+      });
+    }
+
+    return filtered;
+  }, [transactions, searchTerm, typeFilter, productFilter, dateSort, totalSort]);
+
+  const clearFilters = () => {
+    setTypeFilter("");
+    setProductFilter("");
+    setDateSort("");
+    setTotalSort("");
+    setShowFilter(false);
+  };
+
+  const hasActiveFilters = typeFilter || productFilter || dateSort || totalSort;
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showFilter && !event.target.closest('.filter-dropdown-container')) {
+        setShowFilter(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFilter]);
 
   const handleAddTransaction = () => {
     setEditingTransaction(null);
@@ -334,12 +386,13 @@ const InventoryTransactions = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Inventory Transactions</h1>
-            <p className="text-gray-600">Track all stock movements and adjustments</p>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">Inventory Transactions</h1>
+            <p className="text-blue-700">Track all stock movements and adjustments</p>
           </div>
           <button
             onClick={handleAddTransaction}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex items-center gap-2 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg"
+            style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
           >
             <PlusIcon className="w-5 h-5" />
             Add Transaction
@@ -350,41 +403,209 @@ const InventoryTransactions = () => {
       {/* Search and Filter */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
           <input
             type="text"
             placeholder="Search transactions..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-          <FunnelIcon className="w-5 h-5 text-gray-400" />
-          Filter
-        </button>
+        <div className="relative filter-dropdown-container">
+          <button 
+            onClick={() => setShowFilter(!showFilter)}
+            className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all ${
+              hasActiveFilters 
+                ? "border-blue-600 bg-blue-50 text-blue-700 font-semibold" 
+                : "border-blue-200 hover:bg-blue-50 text-blue-700"
+            }`}
+          >
+            <FunnelIcon className="w-5 h-5 text-blue-600" />
+            Filter
+            {hasActiveFilters && (
+              <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                {[typeFilter && "1", productFilter && "1", dateSort && "1", totalSort && "1"].filter(Boolean).length}
+              </span>
+            )}
+          </button>
+
+          {/* Filter Dropdown */}
+          {showFilter && (
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-blue-200 z-50">
+              <div className="p-4 border-b border-blue-100">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-blue-900 text-lg">Filters</h3>
+                  <button
+                    onClick={() => setShowFilter(false)}
+                    className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-4 space-y-4">
+                {/* Type Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">
+                    Transaction Type
+                  </label>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                  >
+                    <option value="">All Types</option>
+                    <option value="stock-in">Stock In (Purchase)</option>
+                    <option value="stock-out">Stock Out (Sale)</option>
+                    <option value="adjustment">Stock Adjustment</option>
+                  </select>
+                </div>
+
+                {/* Product Filter */}
+                <div>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">
+                    Product
+                  </label>
+                  <select
+                    value={productFilter}
+                    onChange={(e) => setProductFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                  >
+                    <option value="">All Products</option>
+                    {products.map((product) => (
+                      <option key={product._id} value={product._id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Date Sort */}
+                <div>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">
+                    Sort by Date
+                  </label>
+                  <select
+                    value={dateSort}
+                    onChange={(e) => setDateSort(e.target.value)}
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                  >
+                    <option value="">Default</option>
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                  </select>
+                </div>
+
+                {/* Total Sort */}
+                <div>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">
+                    Sort by Total
+                  </label>
+                  <select
+                    value={totalSort}
+                    onChange={(e) => setTotalSort(e.target.value)}
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-blue-900"
+                  >
+                    <option value="">Default</option>
+                    <option value="high-to-low">High to Low</option>
+                    <option value="low-to-high">Low to High</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Filter Actions */}
+              <div className="p-4 border-t border-blue-100 flex gap-2">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 px-4 py-2 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                >
+                  Clear
+                </button>
+                <button
+                  onClick={() => setShowFilter(false)}
+                  className="flex-1 px-4 py-2 text-white rounded-lg font-medium transition-all hover:shadow-lg"
+                  style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm text-blue-600 font-medium">Active filters:</span>
+          {typeFilter && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium capitalize">
+              Type: {typeFilter.replace("-", " ")}
+              <button
+                onClick={() => setTypeFilter("")}
+                className="ml-1 hover:text-blue-900"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+          {productFilter && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              Product: {products.find(p => p._id === productFilter)?.name || 'Selected'}
+              <button
+                onClick={() => setProductFilter("")}
+                className="ml-1 hover:text-blue-900"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+          {dateSort && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              Date: {dateSort === "newest" ? "Newest First" : "Oldest First"}
+              <button
+                onClick={() => setDateSort("")}
+                className="ml-1 hover:text-blue-900"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+          {totalSort && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              Total: {totalSort === "high-to-low" ? "High to Low" : "Low to High"}
+              <button
+                onClick={() => setTotalSort("")}
+                className="ml-1 hover:text-blue-900"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Transactions Table */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100/50 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-blue-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference</th> */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Product</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Quantity</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Unit Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-blue-100">
               {filteredTransactions.map((transaction) => {
                 const displayType = transaction.type === 'purchase' ? 'stock-in' : transaction.type === 'sale' ? 'stock-out' : transaction.type;
                 return (
-                <tr key={transaction._id || transaction.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={transaction._id || transaction.id} className="hover:bg-blue-50/30 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full capitalize ${getTypeColor(
@@ -397,8 +618,8 @@ const InventoryTransactions = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{transaction.product?.name || transaction.productName}</div>
-                      <div className="text-sm text-gray-500">{new Date(transaction.date || transaction.createdAt).toLocaleDateString()}</div>
+                      <div className="text-sm font-medium text-blue-900">{transaction.product?.name || transaction.productName}</div>
+                      <div className="text-sm text-blue-600">{new Date(transaction.date || transaction.createdAt).toLocaleDateString()}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -412,27 +633,24 @@ const InventoryTransactions = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">${Number(transaction.unitPrice).toFixed(2)}</div>
+                    <div className="text-sm text-blue-900 font-semibold">${Number(transaction.unitPrice).toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-bold text-blue-900">
                       ${Number((transaction.quantity || 0) * (transaction.unitPrice || 0)).toFixed(2)}
                     </div>
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{transaction.reference}</div>
-                  </td> */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditTransaction(transaction)}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                        className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                       >
                         <PencilIcon className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteTransaction(transaction._id || transaction.id)}
-                        className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                        className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -448,15 +666,16 @@ const InventoryTransactions = () => {
       {/* Empty State */}
       {filteredTransactions.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📦</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
-          <p className="text-gray-500 mb-4">
-            {searchTerm ? "Try adjusting your search terms." : "Get started by adding your first transaction."}
+          <div className="text-6xl mb-4" style={{ color: '#93c5fd' }}>📦</div>
+          <h3 className="text-lg font-medium text-blue-900 mb-2">No transactions found</h3>
+          <p className="text-blue-600 mb-4">
+            {searchTerm || hasActiveFilters ? "Try adjusting your search terms or filters." : "Get started by adding your first transaction."}
           </p>
-          {!searchTerm && (
+          {!searchTerm && !hasActiveFilters && (
             <button
               onClick={handleAddTransaction}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              className="text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg"
+              style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af)' }}
             >
               Add Transaction
             </button>
@@ -479,13 +698,13 @@ const InventoryTransactions = () => {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={()=>setConfirmId(null)}></div>
-            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl">
+            <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-blue-100">
               <div className="p-6 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900">Delete Transaction?</h3>
-                <p className="text-sm text-gray-600">This action cannot be undone.</p>
+                <h3 className="text-lg font-bold text-blue-900">Delete Transaction?</h3>
+                <p className="text-sm text-blue-600">This action cannot be undone.</p>
                 <div className="flex gap-3 pt-2">
                   <button onClick={doDelete} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">Delete</button>
-                  <button onClick={()=>setConfirmId(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors">Cancel</button>
+                  <button onClick={()=>setConfirmId(null)} className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 px-4 rounded-lg font-medium transition-colors">Cancel</button>
                 </div>
               </div>
             </div>

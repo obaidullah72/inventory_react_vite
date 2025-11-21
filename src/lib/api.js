@@ -98,4 +98,8 @@ export const PaymentsAPI = {
   remove: (id) => apiRequest(`/payments/${id}`, { method: 'DELETE' }),
 };
 
+export const ReportsAPI = {
+  graphStats: () => apiRequest('/reports/graph-stats'),
+};
+
 
