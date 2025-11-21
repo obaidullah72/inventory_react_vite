@@ -63,7 +63,11 @@ export default function Sidebar({ openMobile, onCloseMobile, collapsed, onToggle
         className={`fixed top-0 left-0 z-50 h-screen text-white
                     shadow-2xl border-r border-white/10 transition-all duration-500 ease-out ${sidebarWidth}
                     ${openMobile ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
-        style={{ background: 'linear-gradient(to bottom right, #1e3a8a, #1e40af, #1e3a8a)' }}
+        style={{ 
+          background: 'linear-gradient(to bottom right, #1e3a8a, #1e40af, #1e3a8a)',
+          marginTop: 0,
+          paddingTop: 0
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         role="navigation"

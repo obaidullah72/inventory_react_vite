@@ -42,8 +42,13 @@ const Topbar = ({ onOpenMobile, onToggleCollapsed, collapsed }) => {
 
   return (
     <header 
-      className={`fixed top-0 right-0 z-40 transition-all duration-500 ${collapsed ? "sm:left-16 lg:left-20 xl:left-22" : "sm:left-64 lg:left-80 xl:left-84"}`}
-      style={{ background: 'linear-gradient(to right, #1e3a8a, #1e40af, #1e3a8a)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
+      className={`fixed top-0 right-0 z-40 transition-all duration-500 ${collapsed ? "left-[84px]" : "left-64 xl:left-72"}`}
+      style={{ 
+        background: 'linear-gradient(to right, #1e3a8a, #1e40af, #1e3a8a)', 
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        marginTop: 0,
+        paddingTop: 0
+      }}
     >
       <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
         {/* Left side - Menu buttons */}
